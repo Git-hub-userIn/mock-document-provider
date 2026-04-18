@@ -34,9 +34,6 @@ const documents3001 = [
             type: "file",
             is_active: true,
             state: "pending_signature",
-            signatory: "Alice Walker",
-            contact_email: "alice.walker@acme.example",
-            urgency: "High",
             download_url: "http://localhost:3001/documents/DOC-1001/download",
             retrieved_at: "2026-04-16T23:47:55.000Z",
           },
@@ -67,12 +64,6 @@ const documents4001 = {
             nodeCategory: "Document",
             activeStatus: 1,
             currentStatus: "Signed",
-            signerDetails: {
-              name: "Rahul Menon",
-              email: "rahul.menon@northwind.example",
-            },
-            priorityLevel: "Normal",
-            sourceURI: "http://localhost:4001/documents/DOC-1002/download",
             timestamp: "2026-04-16T23:47:55.000Z",
           },
         ],
@@ -109,9 +100,6 @@ const documents5001 = {
           kind: "File",
           active: true,
           status: "Rejected",
-          signerName: "Marta Silva",
-          signerEmail: "marta.silva@fabrikam.example",
-          priority: "Low",
           downloadLink: "http://localhost:5001/documents/DOC-1003/download",
           lastSync: "2026-04-16T23:47:55.000Z",
         },
@@ -120,7 +108,6 @@ const documents5001 = {
   ],
 };
 
-// Tree-shaped payload for 6001
 const documents6001 = {
   id: "CW5078",
   name: "Test CW asimakin 062325 (eSignature testing) 2",
@@ -174,12 +161,6 @@ const documents6001 = {
                   documentType: "Document",
                   active: true,
                   status: "Published",
-                  signerName: "KZ Approver",
-                  signerEmail: "approver@kpo.kz",
-                  priority: "High",
-                  sourceUrl:
-                    "http://localhost:6001/documents/Doc2609411551/download",
-                  fetchedAt: new Date().toISOString(),
                 },
               ],
             },
@@ -193,11 +174,6 @@ const documents6001 = {
       documentType: "Document",
       active: true,
       status: "Draft",
-      signerName: "LamonovI",
-      signerEmail: "lamonovi@kpo.kz",
-      priority: "Normal",
-      sourceUrl: "http://localhost:6001/documents/Doc2634592889/download",
-      fetchedAt: new Date().toISOString(),
     },
   ],
 };
@@ -205,9 +181,7 @@ const documents6001 = {
 function findDocumentInTree(node, targetId) {
   if (!node || typeof node !== "object") return null;
   if (node.id === targetId && node.documentType === "Document") return node;
-  const children = Array.isArray(node.childrenDocument)
-    ? node.childrenDocument
-    : [];
+  const children = Array.isArray(node.childrenDocument) ? node.childrenDocument : [];
   for (const child of children) {
     const found = findDocumentInTree(child, targetId);
     if (found) return found;
@@ -223,9 +197,7 @@ function findDocumentInTree(node, targetId) {
 const app1 = express();
 
 app1.get("/auth", (req, res) => {
-  if (req.headers["x-api-key"] === "12345") {
-    return res.json({ message: "Valid API Key" });
-  }
+  if (req.headers["x-api-key"] === "12345") return res.json({ message: "Valid API Key" });
   return res.status(401).json({ error: "Invalid API Key" });
 });
 
@@ -234,18 +206,12 @@ app1.use((req, res, next) => {
   return res.status(401).json({ error: "Unauthorized" });
 });
 
-app1.get("/documents", (req, res) => {
-  res.json(documents3001);
-});
+app1.get("/documents", (req, res) => res.json(documents3001));
 
 app1.get("/documents/:documentId/download", (req, res) => {
-  const { documentId } = req.params;
   const filePath = path.join(__dirname, "files", "3001.pdf");
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=${documentId}.pdf`
-  );
+  res.setHeader("Content-Disposition", `attachment; filename=${req.params.documentId}.pdf`);
   res.sendFile(filePath);
 });
 
@@ -260,9 +226,8 @@ const app2 = express();
 app2.use(express.json());
 
 app2.post("/auth", (req, res) => {
-  if (req.headers["authorization"] === "Basic dXNlcjpwYXNz") {
+  if (req.headers["authorization"] === "Basic dXNlcjpwYXNz")
     return res.json({ token: "sample_token" });
-  }
   return res.status(401).json({ error: "Invalid Basic Auth" });
 });
 
@@ -271,15 +236,12 @@ app2.use((req, res, next) => {
   return res.status(401).json({ error: "Unauthorized" });
 });
 
-app2.get("/documents", (req, res) => {
-  res.json(documents4001);
-});
+app2.get("/documents", (req, res) => res.json(documents4001));
 
 app2.get("/documents/:id/download", (req, res) => {
-  const { id } = req.params;
   const filePath = path.join(__dirname, "files", "4001.pdf");
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename=${id}.pdf`);
+  res.setHeader("Content-Disposition", `attachment; filename=${req.params.id}.pdf`);
   res.sendFile(filePath);
 });
 
@@ -295,9 +257,8 @@ app3.use(express.json());
 
 app3.post("/auth", (req, res) => {
   const { username, password } = req.body;
-  if (username === "admin" && password === "admin") {
+  if (username === "admin" && password === "admin")
     return res.json({ access_token: "sample_token" });
-  }
   return res.status(401).json({ error: "Invalid credentials" });
 });
 
@@ -306,15 +267,12 @@ app3.use((req, res, next) => {
   return res.status(401).json({ error: "Unauthorized" });
 });
 
-app3.get("/documents", (req, res) => {
-  res.json(documents5001);
-});
+app3.get("/documents", (req, res) => res.json(documents5001));
 
 app3.get("/documents/:id/download", (req, res) => {
-  const { id } = req.params;
   const filePath = path.join(__dirname, "files", "5001.pdf");
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename=${id}.pdf`);
+  res.setHeader("Content-Disposition", `attachment; filename=${req.params.id}.pdf`);
   res.sendFile(filePath);
 });
 
@@ -330,9 +288,8 @@ app4.use(express.json());
 
 app4.post("/auth", (req, res) => {
   const { username, password } = req.body || {};
-  if (username === "treeuser" && password === "treepass") {
+  if (username === "treeuser" && password === "treepass")
     return res.json({ access_token: "sample_token" });
-  }
   return res.status(401).json({ error: "Invalid credentials" });
 });
 
@@ -341,10 +298,7 @@ app4.use((req, res, next) => {
   return res.status(401).json({ error: "Unauthorized" });
 });
 
-app4.get("/documents", (req, res) => {
-  // Tree response
-  res.json(documents6001);
-});
+app4.get("/documents", (req, res) => res.json(documents6001));
 
 app4.get("/documents/:id/download", (req, res) => {
   const { id } = req.params;
@@ -355,4 +309,5 @@ app4.get("/documents/:id/download", (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename=${id}.pdf`);
   res.sendFile(filePath);
 });
+
 app4.listen(6001, () => console.log("Running 6001"));
