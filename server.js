@@ -178,6 +178,70 @@ const documents6001 = {
   ],
 };
 
+// Ariba-like mock data — same childrenDocument tree shape as 6001
+// but represents a different contract workspace
+const documents7001 = {
+  id: "CW9001",
+  name: "Mock Ariba Contract Workspace (IT Procurement)",
+  documentType: "Contract Workspace (Procurement)",
+  active: true,
+  status: "Published",
+  childrenDocument: [
+    {
+      id: "WS7001-FLD-001",
+      name: "Supporting Documents",
+      documentType: "Folder",
+      active: true,
+      childrenDocument: [
+        {
+          id: "WS7001-FLD-002",
+          name: "Vendor Proposals",
+          documentType: "Folder",
+          active: true,
+          childrenDocument: [],
+        },
+        {
+          id: "WS7001-FLD-003",
+          name: "Legal Review",
+          documentType: "Folder",
+          active: true,
+          childrenDocument: [],
+        },
+      ],
+    },
+    {
+      id: "WS7001-FLD-010",
+      name: "Final Signed Documents",
+      documentType: "Folder",
+      active: true,
+      childrenDocument: [
+        {
+          id: "WS7001-FLD-011",
+          name: "PDFs for Signature",
+          documentType: "Folder",
+          active: true,
+          childrenDocument: [
+            {
+              id: "Doc7001-001",
+              name: "IT_Procurement_Contract_Final.pdf",
+              documentType: "Document",
+              active: true,
+              status: "Published",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "Doc7001-002",
+      name: "IT_Framework_Agreement.pdf",
+      documentType: "Document",
+      active: true,
+      status: "Draft",
+    },
+  ],
+};
+
 function findDocumentInTree(node, targetId) {
   if (!node || typeof node !== "object") return null;
   if (node.id === targetId && node.documentType === "Document") return node;
@@ -311,3 +375,77 @@ app4.get("/documents/:id/download", (req, res) => {
 });
 
 app4.listen(6001, () => console.log("Running 6001"));
+
+//
+// =========================
+// PROVIDER 7001 (ARIBA-LIKE: APIKey auth + PATH params + shared header param)
+// =========================
+//
+// Mimics Ariba pattern:
+//   GET /api/retrieve-contract-workspaces/v1/prod/projectDocuments/${contractId}?realm=${realm}&user=${user}&passwordAdapter=${passwordAdapter}
+//   Headers: APIKey, realm
+// Auth: APIKey header (headerName = "APIKey", value = "mock-ariba-key-7001")
+//
+const app5 = express();
+app5.use(express.json());
+
+const ARIBA_API_KEY = "mock-ariba-key-7001";
+
+// Auth check middleware — validates APIKey header
+app5.use((req, res, next) => {
+  const key = req.headers["apikey"];
+  console.log(`[7001] ${req.method} ${req.url} | APIKey=${key} | realm=${req.headers["realm"]}`);
+  if (key !== ARIBA_API_KEY) {
+    console.warn(`[7001] Unauthorized — bad APIKey: ${key}`);
+    return res.status(401).json({ error: "Unauthorized — invalid APIKey" });
+  }
+  next();
+});
+
+// GET /api/retrieve-contract-workspaces/v1/prod/projectDocuments/:contractId
+// Query params: realm, user, passwordAdapter
+// Headers: realm, APIKey (realm appears in both — intentional, mirrors real Ariba)
+app5.get(
+  "/api/retrieve-contract-workspaces/v1/prod/projectDocuments/:contractId",
+  (req, res) => {
+    const { contractId } = req.params;
+    const { realm, user, passwordAdapter } = req.query;
+    const realmHeader = req.headers["realm"];
+
+    console.log(`[7001] LIST_DOCUMENTS contractId=${contractId} realm=${realm} user=${user} passwordAdapter=${passwordAdapter} realm-header=${realmHeader}`);
+
+    if (!realm || !user || !passwordAdapter) {
+      console.warn(`[7001] Missing query params`);
+      return res.status(400).json({ error: "Missing required query params: realm, user, passwordAdapter" });
+    }
+    if (!realmHeader) {
+      console.warn(`[7001] Missing realm header`);
+      return res.status(400).json({ error: "Missing required header: realm" });
+    }
+
+    // Return same shape as 6001 (childrenDocument tree) but for this contract
+    return res.json(documents7001);
+  }
+);
+
+// GET /api/retrieve-contract-workspaces/v1/prod/projectDocuments/:contractId/documents/:documentId/download
+app5.get(
+  "/api/retrieve-contract-workspaces/v1/prod/projectDocuments/:contractId/documents/:documentId/download",
+  (req, res) => {
+    const { contractId, documentId } = req.params;
+    console.log(`[7001] DOWNLOAD contractId=${contractId} documentId=${documentId}`);
+
+    const doc = findDocumentInTree(documents7001, documentId);
+    if (!doc) {
+      console.warn(`[7001] Document not found: ${documentId}`);
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const filePath = path.join(__dirname, "files", "7001.pdf");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=${documentId}.pdf`);
+    res.sendFile(filePath);
+  }
+);
+
+app5.listen(7001, () => console.log("Running 7001 (Ariba-like mock)"));
