@@ -34,6 +34,13 @@ const documents = {
           active: true,
           status: "Published",
         },
+        {
+          id: "Doc7001-003",
+          name: "Rights_Procurement_Contract_Final.pdf",
+          documentType: "Document",
+          active: true,
+          status: "Published",
+        },
       ],
     },
   ],
