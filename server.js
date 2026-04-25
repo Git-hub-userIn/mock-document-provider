@@ -391,7 +391,20 @@ app5.use(express.json());
 
 const ARIBA_API_KEY = "mock-ariba-key-7001";
 
-// Auth check middleware — validates APIKey header
+// POST /auth
+app5.post("/auth", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  console.log(`[7001] POST /auth | Authorization=${authHeader}`);
+  // We can just accept any basic auth for this mock, or check for specific ones.
+  // For simplicity, if basic auth is provided, give the key.
+  if (!authHeader || !authHeader.startsWith("Basic ")) {
+    return res.status(401).json({ error: "Missing or invalid Basic Auth" });
+  }
+  return res.json({ accessToken: ARIBA_API_KEY });
+});
+
+// Auth check middleware — validates APIKey header (this mirrors real Ariba API key usage)
+// For this mock, the client fetches the token via /auth and passes it as 'APIKey' header.
 app5.use((req, res, next) => {
   const key = req.headers["apikey"];
   console.log(`[7001] ${req.method} ${req.url} | APIKey=${key} | realm=${req.headers["realm"]}`);
