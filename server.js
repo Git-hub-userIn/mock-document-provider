@@ -16,13 +16,20 @@ const documents = {
   childrenDocument: [
     {
       id: "WS7001-FLD-010",
-      name: "Final Signed Documents",
+      name: "Final Documents",
       documentType: "Folder",
       active: true,
       childrenDocument: [
         {
           id: "Doc7001-001",
           name: "IT_Procurement_Contract_Final.pdf",
+          documentType: "Document",
+          active: true,
+          status: "Published",
+        },
+        {
+          id: "Doc7001-002",
+          name: "Land_Procurement_Contract_Final.pdf",
           documentType: "Document",
           active: true,
           status: "Published",
